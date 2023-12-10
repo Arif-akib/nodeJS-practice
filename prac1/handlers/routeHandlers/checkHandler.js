@@ -90,7 +90,7 @@ handler._check.post = (requestProperties, callback) => {
                                     })
                                 } else {
                                     callback(401, {
-                                        error: 'userhas already reached max limit',
+                                        error: 'user has already reached max limit',
                                     }) 
                                 }
                             } else {
