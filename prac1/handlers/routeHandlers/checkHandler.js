@@ -225,7 +225,70 @@ handler._check.put = (requestProperties, callback) => {
 };
 
 handler._check.delete = (requestProperties, callback) => {
-   
+      // check the id is valid
+      let id = typeof (requestProperties.queryStringObject.id) === 'string' && requestProperties.queryStringObject.id.trim().length == 20 ? requestProperties.queryStringObject.id : false;
+    
+    if (id) {
+        // look up the check
+          data.read('checks', id, (err1, checkData) => {
+              if (!err1 && checkData) {
+                  let token = typeof (requestProperties.headersObject.token) === 'string' ? requestProperties.headersObject.token : false;
+                  tokenHandler._token.verify(token, parseJSON(checkData).userPhone, (tokenIsValid) => {
+                      if (tokenIsValid) {
+                          // delete the check data
+                          data.delete('checks', id, (err2) => {
+                              if (!err2) {
+                                  data.read('users', parseJSON(checkData).userPhone, (err3 , userData) => {
+                                      let userObject = parseJSON(userData);
+                                      if (!err3 && userData) {
+                                          let userChecks = typeof (userObject.checks) === 'object' && userObject.checks instanceof Array ? userObject.checks : [];
+                                          
+                                          //remove the deleted check id from user list
+                                          let checkPosition = userChecks.indexOf(id);
+                                          if (checkPosition > -1) {
+                                              userChecks.splice(checkPosition, 1);
+
+                                              //resave the user data
+                                              userObject.checks = userChecks;
+                                              data.update('users', userObject.phone, userObject, (err4) => {
+                                                  if (!err4) {
+                                                      callback(200);
+                                                  } else {
+                                                      callback(500, {
+                                                          error: 'there was a server side error',
+                                                      })
+                                                  }
+                                              })
+                                          } else {
+                                              callback(500, {
+                                                  error: 'the check id is not in user',
+                                              })
+                                          }
+                                     }
+                                 }) 
+                              } else {
+                                  callback(500, {
+                                      error : 'there was a server side error',
+                                  })
+                              }
+                          })
+                      } else {
+                          callback(403, {
+                              error: 'authentication fail',
+                          })
+                      }
+                  });
+              } else {
+                  callback(500, {
+                      error : 'tere was a server side error',
+                  })
+              }
+          })
+      } else {
+          callback(400, {
+              error : 'you have a problem in your request',
+          })
+      }
 };
 
 module.exports = handler;
