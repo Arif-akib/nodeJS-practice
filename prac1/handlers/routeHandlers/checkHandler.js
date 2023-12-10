@@ -36,7 +36,7 @@ handler._check.post = (requestProperties, callback) => {
     
     let successCodes = typeof (requestProperties.body.successCodes) === 'object' && requestProperties.body.successCodes instanceof Array ? requestProperties.body.successCodes : false;
 
-    let timeoutSeconds = typeof (requestProperties.body.timeoutSeconds) === 'number' && requestProperties.body.timeoutSeconds % 1 === 0 && requestProperties.body.timeoutSeconds >= 1 && requestProperties.body.timeoutSeconds < 5 ? requestProperties.body.timeoutSeconds : false;
+    let timeoutSeconds = typeof (requestProperties.body.timeoutSeconds) === 'number' && requestProperties.body.timeoutSeconds % 1 === 0 && requestProperties.body.timeoutSeconds >= 1 && requestProperties.body.timeoutSeconds <= 5 ? requestProperties.body.timeoutSeconds : false;
     
     if (protocol && url && method && successCodes && timeoutSeconds) {
         let token = typeof (requestProperties.headersObject.token) === 'string' ? requestProperties.headersObject.token : false;
@@ -121,8 +121,33 @@ handler._check.post = (requestProperties, callback) => {
 
 
 handler._check.get = (requestProperties, callback) => {
-    // check the phone number is valid
-   
+     // check the id is valid
+    const id = typeof (requestProperties.queryStringObject.id) === 'string' && requestProperties.queryStringObject.id.trim().length == 20 ? requestProperties.queryStringObject.id : false;
+    
+    if (id) {
+        data.read('checks', id, (err, checkData) => {
+            if (!err && checkData) {
+                let token = typeof (requestProperties.headersObject.token) === 'string' ? requestProperties.headersObject.token : false;
+                tokenHandler._token.verify(token, parseJSON(checkData).userPhone, (tokenIsValid) => {
+                    if (tokenIsValid) {
+                        callback(200, parseJSON(checkData));
+                    } else {
+                        callback(403, {
+                            error: 'authentication fail',
+                        })
+                    }
+                });
+            } else {
+                callback(500, {
+                    error : 'tere was a server side error',
+                })
+            }
+        })
+    } else {
+        callback(400, {
+            error : 'you have a problem in your request',
+        })
+    }
 };
 
 handler._check.put = (requestProperties, callback) => {
