@@ -26,6 +26,7 @@ handler.handleReqRes = (req, res) => {
     const trimedPath = path.replace(/^\/+|\?+$/g, '');
     // console.log(trimedPath);
     const method = req.method.toLowerCase();
+    // console.log(method);
     const queryStringObject = parsedUrl.query;
     // console.log(queryStringObject);
     const headersObject = req.headers;
